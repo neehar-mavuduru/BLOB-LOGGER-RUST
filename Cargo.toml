@@ -12,6 +12,10 @@ path = "src/lib.rs"
 name = "smoke_test"
 path = "examples/smoke_test.rs"
 
+[[example]]
+name = "load_test_gcs"
+path = "examples/load_test_gcs.rs"
+
 [[bench]]
 name    = "throughput"
 harness = false

@@ -7,7 +7,7 @@ use dashmap::DashMap;
 use crate::config::Config;
 use crate::error::Error;
 use crate::logger::Logger;
-use crate::stats::Statistics;
+use crate::stats::{Statistics, UploaderStats};
 use crate::uploader::Uploader;
 
 /// Manages per-event loggers with concurrent routing via `DashMap`.
@@ -144,6 +144,12 @@ impl LoggerManager {
             logger.lock().close()?;
         }
         Ok(())
+    }
+
+    /// Returns uploader statistics if GCS upload is enabled, otherwise `None`.
+    pub async fn get_uploader_stats(&self) -> Option<Arc<UploaderStats>> {
+        let uploader = self.uploader.as_ref()?;
+        Some(uploader.lock().await.stats().clone())
     }
 
     /// Returns per-event statistics.
