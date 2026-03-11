@@ -72,19 +72,15 @@ mod platform {
     /// Allocates an anonymous private mmap of `size` bytes (rounded up to 4096).
     pub fn mmap_alloc(size: usize) -> Result<(*mut u8, usize), Error> {
         let rounded = (size + PAGE - 1) & !(PAGE - 1);
-        // SAFETY: We request an anonymous private mapping. For MAP_ANONYMOUS the fd is
-        // ignored (Linux convention: pass -1). We use borrow_raw(-1) only for the mmap
-        // call; the fd is not used after.
+        let len = std::num::NonZeroUsize::new(rounded)
+            .ok_or_else(|| Error::Mmap("size must be > 0".into()))?;
+        // SAFETY: Anonymous mapping with no file backing; len is non-zero and page-aligned.
         let ptr = unsafe {
-            let fd = std::os::fd::BorrowedFd::borrow_raw(-1);
-            nix::sys::mman::mmap(
+            nix::sys::mman::mmap_anonymous(
                 None,
-                std::num::NonZeroUsize::new(rounded)
-                    .ok_or_else(|| Error::Mmap("size must be > 0".into()))?,
+                len,
                 nix::sys::mman::ProtFlags::PROT_READ | nix::sys::mman::ProtFlags::PROT_WRITE,
-                nix::sys::mman::MapFlags::MAP_PRIVATE | nix::sys::mman::MapFlags::MAP_ANONYMOUS,
-                fd,
-                0,
+                nix::sys::mman::MapFlags::MAP_PRIVATE,
             )
             .map_err(|e| Error::Mmap(format!("mmap failed: {e}")))?
         };
