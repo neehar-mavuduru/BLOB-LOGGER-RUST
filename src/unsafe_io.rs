@@ -65,26 +65,25 @@ mod platform {
     use nix::fcntl::OFlag;
     use nix::sys::stat::Mode;
     use nix::unistd;
+    use std::os::fd::AsFd;
 
     const PAGE: usize = 4096;
 
     /// Allocates an anonymous private mmap of `size` bytes (rounded up to 4096).
     pub fn mmap_alloc(size: usize) -> Result<(*mut u8, usize), Error> {
         let rounded = (size + PAGE - 1) & !(PAGE - 1);
-        // SAFETY: We request an anonymous private mapping with no file backing.
-        // MAP_ANONYMOUS | MAP_PRIVATE guarantees a fresh zero-filled region with no
-        // aliasing from other processes. The returned pointer is page-aligned and valid
-        // for `rounded` bytes until munmap is called.
-        // UB would occur if `rounded` were 0 (kernel may return MAP_FAILED); we guard
-        // against that by requiring size > 0 upstream (Config::validate).
+        // SAFETY: We request an anonymous private mapping. For MAP_ANONYMOUS the fd is
+        // ignored (Linux convention: pass -1). We use borrow_raw(-1) only for the mmap
+        // call; the fd is not used after.
         let ptr = unsafe {
+            let fd = std::os::fd::BorrowedFd::borrow_raw(-1);
             nix::sys::mman::mmap(
                 None,
                 std::num::NonZeroUsize::new(rounded)
                     .ok_or_else(|| Error::Mmap("size must be > 0".into()))?,
                 nix::sys::mman::ProtFlags::PROT_READ | nix::sys::mman::ProtFlags::PROT_WRITE,
                 nix::sys::mman::MapFlags::MAP_PRIVATE | nix::sys::mman::MapFlags::MAP_ANONYMOUS,
-                None::<std::os::fd::BorrowedFd<'_>>,
+                fd,
                 0,
             )
             .map_err(|e| Error::Mmap(format!("mmap failed: {e}")))?
@@ -96,12 +95,14 @@ mod platform {
     pub fn mmap_free(ptr: *mut u8, size: usize) -> Result<(), Error> {
         // SAFETY: `ptr` was returned by a prior mmap_alloc with the same `size`.
         // After munmap the pointer is invalid; the caller must not dereference it.
-        // UB would occur if ptr/size don't correspond to a valid mapping.
         unsafe {
             let nn = std::num::NonZeroUsize::new(size)
                 .ok_or_else(|| Error::Mmap("munmap size must be > 0".into()))?;
-            nix::sys::mman::munmap(std::ptr::NonNull::new(ptr as *mut _).unwrap(), nn)
-                .map_err(|e| Error::Mmap(format!("munmap failed: {e}")))?;
+            nix::sys::mman::munmap(
+                std::ptr::NonNull::new(ptr as *mut _).unwrap(),
+                nn.get(),
+            )
+            .map_err(|e| Error::Mmap(format!("munmap failed: {e}")))?;
         }
         Ok(())
     }
@@ -136,11 +137,9 @@ mod platform {
     pub fn fallocate(fd: i32, size: i64) -> Result<(), Error> {
         use nix::fcntl::FallocateFlags;
         // SAFETY: fd is a valid open file descriptor. fallocate does not affect memory safety.
-        unsafe {
-            let fd_borrowed = std::os::fd::BorrowedFd::borrow_raw(fd);
-            nix::fcntl::fallocate(fd_borrowed, FallocateFlags::empty(), 0, size)
-                .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
-        }
+        nix::fcntl::fallocate(fd, FallocateFlags::empty(), 0, size).map_err(|e| {
+            Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+        })?;
         Ok(())
     }
 

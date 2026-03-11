@@ -1,37 +1,5 @@
-   0.171973667s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint: stale: changed "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/src/logger_manager.rs"
-   0.171990917s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint:           (vs) "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-a1c3c1fe689cbd13/dep-lib-blob_logger_rust"
-   0.171994084s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 1773215621, nanos: 530759316 } < FileTime { seconds: 1773215677, nanos: 820543023 }
-   0.172433250s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: false }/TargetInner { ..: lib_target("blob_logger_rust", ["lib"], "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/src/lib.rs", Edition2021) }
-   0.172450000s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-a1c3c1fe689cbd13/dep-lib-blob_logger_rust", reference_mtime: FileTime { seconds: 1773215621, nanos: 530759316 }, stale: "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/src/logger_manager.rs", stale_mtime: FileTime { seconds: 1773215677, nanos: 820543023 } }))
-   0.216453334s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint: stale: changed "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/src/logger_manager.rs"
-   0.216465167s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint:           (vs) "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-2738382ceb2b42be/dep-test-lib-blob_logger_rust"
-   0.216467209s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 1773215621, nanos: 530747149 } < FileTime { seconds: 1773215677, nanos: 820543023 }
-   0.216846750s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { ..: lib_target("blob_logger_rust", ["lib"], "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/src/lib.rs", Edition2021) }
-   0.216856334s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-2738382ceb2b42be/dep-test-lib-blob_logger_rust", reference_mtime: FileTime { seconds: 1773215621, nanos: 530747149 }, stale: "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/src/logger_manager.rs", stale_mtime: FileTime { seconds: 1773215677, nanos: 820543023 } }))
-   0.223737084s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="adversarial_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "adversarial_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/adversarial_tests.rs", Edition2021) }
-   0.223748000s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="adversarial_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.225031417s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="buffer_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "buffer_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/buffer_tests.rs", Edition2021) }
-   0.225040792s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="buffer_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.226092625s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="config_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "config_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/config_tests.rs", Edition2021) }
-   0.226101542s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="config_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.227168250s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="file_writer_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "file_writer_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/file_writer_tests.rs", Edition2021) }
-   0.227176959s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="file_writer_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.228206584s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="integration_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "integration_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/integration_tests.rs", Edition2021) }
-   0.228214500s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="integration_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.229306209s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="logger_manager_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "logger_manager_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/logger_manager_tests.rs", Edition2021) }
-   0.229312667s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="logger_manager_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.230435167s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="logger_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "logger_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/logger_tests.rs", Edition2021) }
-   0.230445000s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="logger_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.231345209s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="shard_collection_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "shard_collection_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/shard_collection_tests.rs", Edition2021) }
-   0.231350834s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="shard_collection_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.232260917s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="shard_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "shard_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/shard_tests.rs", Edition2021) }
-   0.232266709s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="shard_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.233298084s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="uploader_tests"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "uploader_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/uploader_tests.rs", Edition2021) }
-   0.233303209s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="uploader_tests"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.234322042s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="throughput"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "bench", name: "throughput", tested: false, harness: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/benches/throughput.rs", Edition2021) }
-   0.234327250s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="throughput"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
-   0.235230875s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="load_test_gcs"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: false }/TargetInner { kind: "example", name: "load_test_gcs", tested: false, benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/examples/load_test_gcs.rs", Edition2021) }
-   0.235239292s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="load_test_gcs"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-b7f73e17377f262e/example-load_test_gcs`
+   0.296629333s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: false }/TargetInner { ..: lib_target("blob_logger_rust", ["lib"], "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/src/lib.rs", Edition2021) }
+   0.297102125s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-afd2a7ff4a75fbf4/lib-blob_logger_rust`
 
 Caused by:
     No such file or directory (os error 2)
@@ -54,9 +22,367 @@ Stack backtrace:
   14: std::rt::lang_start::<()>::{closure#0}
   15: std::rt::lang_start_internal
   16: _main
-   0.239274834s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="smoke_test"}: cargo::core::compiler::fingerprint: fingerprint dirty for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: false }/TargetInner { kind: "example", name: "smoke_test", tested: false, benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/examples/smoke_test.rs", Edition2021) }
-   0.239283292s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="smoke_test"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(8) })
+   0.323356042s  INFO prepare_target{force=false package_id=nix v0.29.0 target="nix"}: cargo::core::compiler::fingerprint: fingerprint error for nix v0.29.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("nix", ["lib"], "/Users/neeharmavuduru/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.29.0/src/lib.rs", Edition2021) }
+   0.323373833s  INFO prepare_target{force=false package_id=nix v0.29.0 target="nix"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/nix-501a80bac18f4f63/lib-nix`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+  17: _main
+   0.348302833s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { ..: lib_target("blob_logger_rust", ["lib"], "/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/src/lib.rs", Edition2021) }
+   0.348320042s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="blob_logger_rust"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-a661286bd69ec4b4/test-lib-blob_logger_rust`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.354184750s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="adversarial_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "adversarial_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/adversarial_tests.rs", Edition2021) }
+   0.354199750s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="adversarial_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-a77da2ac5c922c15/test-integration-test-adversarial_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.355130000s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="buffer_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "buffer_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/buffer_tests.rs", Edition2021) }
+   0.355135417s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="buffer_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-9e7486e1adbf7a7d/test-integration-test-buffer_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.355964375s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="config_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "config_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/config_tests.rs", Edition2021) }
+   0.355971958s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="config_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-9ccfb5d4832ecc8b/test-integration-test-config_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.356822917s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="file_writer_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "file_writer_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/file_writer_tests.rs", Edition2021) }
+   0.356830375s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="file_writer_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-c04d412a04423102/test-integration-test-file_writer_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.357835375s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="integration_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "integration_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/integration_tests.rs", Edition2021) }
+   0.357845417s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="integration_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-3cecfeb800945f42/test-integration-test-integration_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.358853958s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="logger_manager_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "logger_manager_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/logger_manager_tests.rs", Edition2021) }
+   0.358860250s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="logger_manager_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-68336081ee7fded2/test-integration-test-logger_manager_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.359741750s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="logger_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "logger_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/logger_tests.rs", Edition2021) }
+   0.359746792s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="logger_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-17df60fc1e1f8176/test-integration-test-logger_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.360551792s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="shard_collection_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "shard_collection_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/shard_collection_tests.rs", Edition2021) }
+   0.360558958s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="shard_collection_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-24d95c721a0310cc/test-integration-test-shard_collection_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.361374958s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="shard_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "shard_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/shard_tests.rs", Edition2021) }
+   0.361381083s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="shard_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-0ec33206c394e7ab/test-integration-test-shard_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.362255833s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="uploader_tests"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "test", name: "uploader_tests", benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/tests/uploader_tests.rs", Edition2021) }
+   0.362263583s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="uploader_tests"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-34103ee989de56bd/test-integration-test-uploader_tests`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.363093208s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="throughput"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: true }/TargetInner { kind: "bench", name: "throughput", tested: false, harness: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/benches/throughput.rs", Edition2021) }
+   0.363098458s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="throughput"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-2f6801f763d3b68f/test-bench-throughput`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.363938542s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="load_test_gcs"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: false }/TargetInner { kind: "example", name: "load_test_gcs", tested: false, benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/examples/load_test_gcs.rs", Edition2021) }
+   0.363945417s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="load_test_gcs"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-9bd81cf85c811479/example-load_test_gcs`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.364779708s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="smoke_test"}: cargo::core::compiler::fingerprint: fingerprint error for blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)/Check { test: false }/TargetInner { kind: "example", name: "smoke_test", tested: false, benched: false, ..: with_path("/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/examples/smoke_test.rs", Edition2021) }
+   0.364786708s  INFO prepare_target{force=false package_id=blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust) target="smoke_test"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust/target/debug/.fingerprint/blob-logger-rust-3430047e8bacc418/example-smoke_test`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: cargo_util::paths::read_bytes
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   7: cargo::ops::cargo_compile::compile_ws
+   8: cargo::ops::cargo_compile::compile_with_exec
+   9: cargo::ops::cargo_compile::compile
+  10: cargo::commands::check::exec
+  11: <cargo::cli::Exec>::exec
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+    Checking nix v0.29.0
     Checking blob-logger-rust v0.1.0 (/Users/neeharmavuduru/Documents/GitHub/blob-logger-rust)
-error: could not compile `blob-logger-rust` (lib test) due to 1 previous error
-warning: build failed, waiting for other jobs to finish...
-error: could not compile `blob-logger-rust` (lib) due to 1 previous error
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.29s
