@@ -145,12 +145,8 @@ mod platform {
 
     /// `fsync(2)` wrapper.
     pub fn fsync(fd: i32) -> Result<(), Error> {
-        // SAFETY: fd is a valid open file descriptor.
-        unsafe {
-            let fd_borrowed = std::os::fd::BorrowedFd::borrow_raw(fd);
-            nix::unistd::fsync(fd_borrowed.as_fd())
-                .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
-        }
+        nix::unistd::fsync(fd)
+            .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
         Ok(())
     }
 
