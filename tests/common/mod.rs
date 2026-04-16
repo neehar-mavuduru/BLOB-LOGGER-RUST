@@ -16,6 +16,7 @@ pub fn make_config(base_dir: &Path) -> Config {
         log_file_path: base_dir.to_path_buf(),
         flush_interval: Duration::from_secs(300),
         gcs_config: None,
+        metrics_config: None,
     }
 }
 
@@ -23,22 +24,23 @@ pub fn make_config(base_dir: &Path) -> Config {
 #[allow(dead_code)]
 pub fn make_logger(base_dir: &Path) -> Logger {
     let logs_dir = base_dir.join("logs");
-    let upload_ready_dir = base_dir.join("upload_ready");
     std::fs::create_dir_all(&logs_dir).expect("create logs dir");
-    std::fs::create_dir_all(&upload_ready_dir).expect("create upload_ready dir");
 
     let mut config = make_config(base_dir);
     config.validate().expect("config validation");
 
-    Logger::new("test_event", &logs_dir, &upload_ready_dir, config).expect("create logger")
+    Logger::new("test_event", &logs_dir, config).expect("create logger")
 }
 
 /// Decodes all length-prefixed records from a block-formatted log file.
+/// Record format: [4B recLen LE][8B timestamp LE][payload]
+/// where recLen = 8 + len(payload). Returns only the payload portion.
 #[allow(dead_code)]
 pub fn read_all_records(path: &Path) -> Vec<Vec<u8>> {
     let data = std::fs::read(path).expect("read log file");
     let mut records = Vec::new();
     let mut pos = 0;
+    const TIMESTAMP_SIZE: usize = 8;
 
     while pos + 8 <= data.len() {
         let block_size = u32::from_le_bytes(data[pos..pos + 4].try_into().unwrap()) as usize;
@@ -59,7 +61,9 @@ pub fn read_all_records(path: &Path) -> Vec<Vec<u8>> {
             if rpos + 4 + rec_len > payload_end {
                 break;
             }
-            records.push(data[rpos + 4..rpos + 4 + rec_len].to_vec());
+            // Skip the 8-byte timestamp, extract only the payload
+            let payload = data[rpos + 4 + TIMESTAMP_SIZE..rpos + 4 + rec_len].to_vec();
+            records.push(payload);
             rpos += 4 + rec_len;
         }
 
@@ -129,10 +133,12 @@ pub fn assert_no_tmp_files(dir: &Path) {
 }
 
 /// Decodes records from a raw byte slice (same format as log files).
+/// Record format: [4B recLen LE][8B timestamp LE][payload]
 #[allow(dead_code)]
 pub fn decode_records(data: &[u8]) -> Vec<Vec<u8>> {
     let mut records = Vec::new();
     let mut pos = 0;
+    const TIMESTAMP_SIZE: usize = 8;
 
     while pos + 8 <= data.len() {
         let block_size = u32::from_le_bytes(data[pos..pos + 4].try_into().unwrap()) as usize;
@@ -152,7 +158,8 @@ pub fn decode_records(data: &[u8]) -> Vec<Vec<u8>> {
             if rpos + 4 + rec_len > payload_end {
                 break;
             }
-            records.push(data[rpos + 4..rpos + 4 + rec_len].to_vec());
+            let payload = data[rpos + 4 + TIMESTAMP_SIZE..rpos + 4 + rec_len].to_vec();
+            records.push(payload);
             rpos += 4 + rec_len;
         }
 

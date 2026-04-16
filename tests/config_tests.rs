@@ -11,6 +11,7 @@ fn base_config() -> Config {
         log_file_path: PathBuf::from("/tmp/test"),
         flush_interval: Duration::from_secs(300),
         gcs_config: None,
+        metrics_config: None,
     }
 }
 

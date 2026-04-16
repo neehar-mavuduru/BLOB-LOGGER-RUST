@@ -3,7 +3,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use object_store::ObjectStore;
+use object_store::{MultipartUpload, ObjectStore, PutMultipartOpts};
 use regex::Regex;
 use tokio::io::AsyncReadExt;
 use tokio::sync::watch;
@@ -12,12 +12,12 @@ use crate::config::GcsUploadConfig;
 use crate::error::Error;
 use crate::stats::UploaderStats;
 
-/// Poll-based uploader that discovers sealed log files in `upload_ready/`
-/// and streams them to GCS via `object_store::put_multipart`.
+/// Poll-based uploader that discovers sealed `.log` files in the logs directory
+/// and uploads them to GCS.
 #[derive(Debug)]
 pub struct Uploader {
     config: GcsUploadConfig,
-    upload_ready_dir: PathBuf,
+    scan_dir: PathBuf,
     store: Arc<dyn ObjectStore>,
     stats: Arc<UploaderStats>,
     shutdown_tx: watch::Sender<bool>,
@@ -28,7 +28,7 @@ pub struct Uploader {
 impl Uploader {
     /// Creates an uploader using ADC-based GCS credentials.
     pub fn new_gcs(
-        upload_ready_dir: PathBuf,
+        scan_dir: PathBuf,
         config: GcsUploadConfig,
     ) -> Result<Self, Error> {
         let store = object_store::gcp::GoogleCloudStorageBuilder::from_env()
@@ -40,7 +40,7 @@ impl Uploader {
 
         Ok(Self {
             config,
-            upload_ready_dir,
+            scan_dir,
             store: Arc::new(store),
             stats: Arc::new(UploaderStats::default()),
             shutdown_tx,
@@ -51,7 +51,7 @@ impl Uploader {
 
     /// Creates an uploader with an injected object store (for testing).
     pub fn with_store(
-        upload_ready_dir: PathBuf,
+        scan_dir: PathBuf,
         config: GcsUploadConfig,
         store: Arc<dyn ObjectStore>,
     ) -> Self {
@@ -59,7 +59,7 @@ impl Uploader {
 
         Self {
             config,
-            upload_ready_dir,
+            scan_dir,
             store,
             stats: Arc::new(UploaderStats::default()),
             shutdown_tx,
@@ -71,14 +71,14 @@ impl Uploader {
     /// Starts the background poll worker.
     pub fn start(&mut self) {
         let config = self.config.clone();
-        let upload_ready_dir = self.upload_ready_dir.clone();
+        let scan_dir = self.scan_dir.clone();
         let store = self.store.clone();
         let stats = self.stats.clone();
         let mut shutdown_rx = self.shutdown_rx.clone();
 
         let handle = tokio::spawn(async move {
-            // Crash-recovery scan
-            Self::scan_and_upload_inner(&upload_ready_dir, &store, &config, &stats).await;
+            // Crash-recovery scan: pick up leftover .log files from previous shutdown
+            Self::scan_and_upload_inner(&scan_dir, &store, &config, &stats).await;
 
             let mut interval = tokio::time::interval(config.poll_interval);
             interval.tick().await; // first tick is immediate, skip it
@@ -86,11 +86,11 @@ impl Uploader {
             loop {
                 tokio::select! {
                     _ = interval.tick() => {
-                        Self::scan_and_upload_inner(&upload_ready_dir, &store, &config, &stats).await;
+                        Self::scan_and_upload_inner(&scan_dir, &store, &config, &stats).await;
                     }
                     _ = shutdown_rx.changed() => {
                         // Final drain
-                        Self::scan_and_upload_inner(&upload_ready_dir, &store, &config, &stats).await;
+                        Self::scan_and_upload_inner(&scan_dir, &store, &config, &stats).await;
                         break;
                     }
                 }
@@ -101,15 +101,15 @@ impl Uploader {
     }
 
     async fn scan_and_upload_inner(
-        upload_ready_dir: &PathBuf,
+        scan_dir: &PathBuf,
         store: &Arc<dyn ObjectStore>,
         config: &GcsUploadConfig,
         stats: &Arc<UploaderStats>,
     ) {
-        let entries = match std::fs::read_dir(upload_ready_dir) {
+        let entries = match std::fs::read_dir(scan_dir) {
             Ok(e) => e,
             Err(e) => {
-                tracing::warn!("failed to read upload_ready dir: {}", e);
+                tracing::warn!("failed to read scan dir: {}", e);
                 return;
             }
         };
@@ -117,69 +117,60 @@ impl Uploader {
         for entry in entries.flatten() {
             let path = entry.path();
 
-            if path.extension().and_then(|e| e.to_str()) == Some("tmp") {
+            // Skip directories
+            if entry.file_type().map(|t| t.is_dir()).unwrap_or(true) {
                 continue;
             }
 
-            let metadata = match std::fs::symlink_metadata(&path) {
-                Ok(m) => m,
-                Err(_) => continue,
-            };
-
-            if !metadata.file_type().is_symlink() {
-                continue;
+            // Only process sealed .log files (skip .tmp files still being written)
+            match path.extension().and_then(|e| e.to_str()) {
+                Some("log") => {}
+                _ => continue,
             }
-
-            let real_path = match std::fs::read_link(&path) {
-                Ok(p) => p,
-                Err(e) => {
-                    tracing::warn!("failed to read symlink {:?}: {}", path, e);
-                    continue;
-                }
-            };
 
             if let Err(e) =
-                Self::upload_file_with_retry(&real_path, &path, store, config, stats).await
+                Self::upload_file_with_retry(&path, store, config, stats).await
             {
-                tracing::error!("upload failed for {:?}: {}", real_path, e);
+                tracing::error!("upload failed for {:?}: {}", path, e);
             }
         }
     }
 
     async fn upload_file_with_retry(
-        real_path: &PathBuf,
-        symlink_path: &PathBuf,
+        file_path: &PathBuf,
         store: &Arc<dyn ObjectStore>,
         config: &GcsUploadConfig,
         stats: &Arc<UploaderStats>,
     ) -> Result<(), Error> {
-        // Bug 3 fix: skip empty files
-        let file_size = match std::fs::metadata(real_path) {
+        let file_size = match std::fs::metadata(file_path) {
             Ok(m) => m.len(),
             Err(e) => {
-                tracing::warn!("cannot stat {:?}: {}, treating as dangling symlink", real_path, e);
+                tracing::warn!("cannot stat {:?}: {}, skipping", file_path, e);
                 stats.upload_errors.fetch_add(1, Ordering::Relaxed);
                 return Ok(());
             }
         };
 
         if file_size == 0 {
-            tracing::warn!("skipping empty file: {:?}", real_path);
-            let _ = std::fs::remove_file(real_path);
-            let _ = std::fs::remove_file(symlink_path);
+            tracing::warn!("skipping empty file: {:?}", file_path);
+            let _ = std::fs::remove_file(file_path);
             return Ok(());
         }
 
-        let filename = real_path
+        let filename = file_path
             .file_name()
             .and_then(|f| f.to_str())
             .ok_or_else(|| Error::Uploader("invalid filename".into()))?;
 
         let object_name = Self::derive_gcs_path(filename, &config.object_prefix)?;
+        crate::metrics::count("blob_logger.upload_file", 1, &[]);
 
         for attempt in 0..config.max_retries {
-            match Self::do_upload(real_path, &object_name, store, config).await {
+            let upload_start = std::time::Instant::now();
+            match Self::do_upload(file_path, &object_name, store, config).await {
                 Ok(()) => {
+                    crate::metrics::timing("blob_logger.upload_file_duration", upload_start.elapsed(), &[]);
+
                     // Verify size
                     let object_path = object_store::path::Path::from(object_name.as_str());
                     match store.head(&object_path).await {
@@ -187,7 +178,7 @@ impl Uploader {
                             if meta.size != file_size as usize {
                                 tracing::warn!(
                                     "size mismatch: local={} remote={} for {:?}",
-                                    file_size, meta.size, real_path
+                                    file_size, meta.size, file_path
                                 );
                             }
                         }
@@ -196,10 +187,10 @@ impl Uploader {
                         }
                     }
 
-                    let _ = std::fs::remove_file(symlink_path);
-                    let _ = std::fs::remove_file(real_path);
+                    let _ = std::fs::remove_file(file_path);
                     stats.files_uploaded.fetch_add(1, Ordering::Relaxed);
                     stats.bytes_uploaded.fetch_add(file_size, Ordering::Relaxed);
+                    crate::metrics::count("blob_logger.upload_bytes", file_size as i64, &[]);
                     tracing::info!("uploaded {:?} → {}", filename, object_name);
                     return Ok(());
                 }
@@ -208,7 +199,7 @@ impl Uploader {
                     let backoff = Duration::from_secs(1 << attempt);
                     tracing::warn!(
                         "upload attempt {} failed for {:?}: {}; retrying in {:?}",
-                        attempt + 1, real_path, e, backoff
+                        attempt + 1, file_path, e, backoff
                     );
                     tokio::time::sleep(backoff).await;
                 }
@@ -217,47 +208,74 @@ impl Uploader {
 
         // Permanent failure
         stats.upload_errors.fetch_add(1, Ordering::Relaxed);
+        crate::metrics::count("blob_logger.upload_file_failed", 1, &[]);
         tracing::error!(
             "upload permanently failed for {:?} after {} retries",
-            real_path, config.max_retries
+            file_path, config.max_retries
         );
         Ok(())
     }
 
+    /// Uploads a file using streaming multipart upload.
+    /// Reads the file in `chunk_size` chunks to avoid loading it entirely into memory.
     async fn do_upload(
-        real_path: &PathBuf,
+        file_path: &PathBuf,
         object_name: &str,
         store: &Arc<dyn ObjectStore>,
-        _config: &GcsUploadConfig,
+        config: &GcsUploadConfig,
     ) -> Result<(), Error> {
         let object_path = object_store::path::Path::from(object_name);
 
-        let mut file = tokio::fs::File::open(real_path)
+        let mut file = tokio::fs::File::open(file_path)
             .await
             .map_err(Error::Io)?;
 
-        let file_size = file
-            .metadata()
+        let mut upload = store
+            .put_multipart_opts(&object_path, PutMultipartOpts::default())
             .await
-            .map_err(Error::Io)?
-            .len();
+            .map_err(|e| Error::Gcs(format!("put_multipart failed: {e}")))?;
 
-        let mut data = Vec::with_capacity(file_size as usize);
-        file.read_to_end(&mut data)
-            .await
-            .map_err(Error::Io)?;
+        let mut buf = vec![0u8; config.chunk_size];
+        loop {
+            let n = file.read(&mut buf).await.map_err(Error::Io)?;
+            if n == 0 {
+                break;
+            }
+            upload
+                .put_part(bytes::Bytes::copy_from_slice(&buf[..n]).into())
+                .await
+                .map_err(|e| {
+                    Error::Gcs(format!("put_part failed: {e}"))
+                })?;
+        }
 
-        store
-            .put(&object_path, bytes::Bytes::from(data).into())
+        upload
+            .complete()
             .await
-            .map_err(|e| Error::Gcs(format!("put failed: {e}")))?;
+            .map_err(|e| Error::Gcs(format!("complete failed: {e}")))?;
 
         Ok(())
     }
 
     /// Derives GCS object path from filename.
     /// Pattern: `{prefix}{event_name}/{date}/{hour}/{filename}`
+    ///
+    /// Supports two filename formats:
+    ///   - With pod: `{event}--{podname}_{YYYY-MM-DD_HH-MM-SS}_{seq}.log`
+    ///   - Without pod: `{event}_{YYYY-MM-DD_HH-MM-SS}_{seq}.log`
     fn derive_gcs_path(filename: &str, prefix: &str) -> Result<String, Error> {
+        // Try pod-name format first: {event}--{pod}_{date}_{time}_{seq}.log
+        let pod_re = Regex::new(r"^(.+?)--(.+?)_(\d{4}-\d{2}-\d{2})_(\d{2})-\d{2}-\d{2}(?:_\d+)?\.log$")
+            .map_err(|e| Error::Uploader(format!("regex error: {e}")))?;
+
+        if let Some(caps) = pod_re.captures(filename) {
+            let event_name = &caps[1];
+            let date = &caps[3];
+            let hour = &caps[4];
+            return Ok(format!("{prefix}{event_name}/{date}/{hour}/{filename}"));
+        }
+
+        // Fallback to no-pod format: {event}_{date}_{time}_{seq}.log
         let re = Regex::new(r"^(.+?)_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})(?:_\d+)?\.log$")
             .map_err(|e| Error::Uploader(format!("regex error: {e}")))?;
 

@@ -16,6 +16,7 @@ fn make_config(base_dir: &std::path::Path) -> Config {
         log_file_path: base_dir.to_path_buf(),
         flush_interval: Duration::from_secs(300),
         gcs_config: None,
+        metrics_config: None,
     };
     config.validate().unwrap();
     config

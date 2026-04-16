@@ -60,12 +60,16 @@ impl Buffer {
 
     /// Attempts to write `data` into the buffer using CAS-based offset reservation.
     ///
+    /// On-disk record layout: `[4-byte recLen (LE)][8-byte timestamp (LE)][payload]`
+    /// where `recLen = 8 + len(payload)` (matches Go's format).
+    ///
     /// Returns `(bytes_reserved, should_swap)`:
     /// - `(0, true)` means the buffer is full.
     /// - `(n, true)` means the write succeeded but the buffer is >=90% full (proactive swap).
     /// - `(n, false)` means normal success.
     pub fn write(&self, data: &[u8]) -> Result<(usize, bool), Error> {
-        let total_size = 4 + data.len();
+        const TIMESTAMP_SIZE: usize = 8;
+        let total_size = 4 + TIMESTAMP_SIZE + data.len();
 
         loop {
             let current = self.offset.load(Ordering::Acquire);
@@ -83,8 +87,16 @@ impl Buffer {
                     self.inflight.fetch_add(1, Ordering::AcqRel);
 
                     let off = current as usize;
-                    unsafe_io::write_u32_le(self.data_ptr, off, data.len() as u32);
-                    unsafe_io::write_bytes(self.data_ptr, off + 4, data);
+                    // Length prefix: timestampSize + len(payload)
+                    unsafe_io::write_u32_le(self.data_ptr, off, (TIMESTAMP_SIZE + data.len()) as u32);
+                    // 8-byte nanosecond timestamp
+                    let ts_nanos = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_nanos() as u64;
+                    unsafe_io::write_u64_le(self.data_ptr, off + 4, ts_nanos);
+                    // Payload
+                    unsafe_io::write_bytes(self.data_ptr, off + 4 + TIMESTAMP_SIZE, data);
 
                     self.inflight.fetch_sub(1, Ordering::AcqRel);
 

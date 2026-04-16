@@ -23,6 +23,15 @@ pub fn write_u32_le(base: *mut u8, offset: usize, value: u32) {
     }
 }
 
+/// Writes a little-endian `u64` at `base + offset`.
+pub fn write_u64_le(base: *mut u8, offset: usize, value: u64) {
+    let bytes = value.to_le_bytes();
+    // SAFETY: same contract as write_u32_le — caller guarantees `offset + 8` is within bounds.
+    unsafe {
+        std::ptr::copy_nonoverlapping(bytes.as_ptr(), base.add(offset), 8);
+    }
+}
+
 /// Copies `data` into the mmap region at `base + offset`.
 pub fn write_bytes(base: *mut u8, offset: usize, data: &[u8]) {
     if data.is_empty() {

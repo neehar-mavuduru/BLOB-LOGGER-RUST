@@ -17,7 +17,6 @@ pub struct LoggerManager {
     #[allow(dead_code)]
     base_dir: PathBuf,
     logs_dir: PathBuf,
-    upload_ready_dir: PathBuf,
     config: Config,
     uploader: Option<Arc<tokio::sync::Mutex<Uploader>>>,
 }
@@ -27,15 +26,21 @@ impl LoggerManager {
     pub async fn new(mut config: Config) -> Result<Self, Error> {
         config.validate()?;
 
+        if let Some(ref mc) = config.metrics_config {
+            let tags: Vec<(&str, &str)> = mc.global_tags
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            crate::metrics::init_metrics(&mc.telegraf_host, &mc.telegraf_port, &tags, mc.sampling_rate);
+        }
+
         let base_dir = config.log_file_path.clone();
         let logs_dir = base_dir.join("logs");
-        let upload_ready_dir = base_dir.join("upload_ready");
 
         std::fs::create_dir_all(&logs_dir)?;
-        std::fs::create_dir_all(&upload_ready_dir)?;
 
         let uploader = if let Some(ref gcs_config) = config.gcs_config {
-            let mut up = Uploader::new_gcs(upload_ready_dir.clone(), gcs_config.clone())?;
+            let mut up = Uploader::new_gcs(logs_dir.clone(), gcs_config.clone())?;
             up.start();
             Some(Arc::new(tokio::sync::Mutex::new(up)))
         } else {
@@ -46,7 +51,6 @@ impl LoggerManager {
             loggers: DashMap::new(),
             base_dir,
             logs_dir,
-            upload_ready_dir,
             config,
             uploader,
         })
@@ -59,10 +63,8 @@ impl LoggerManager {
     ) -> Result<Self, Error> {
         let base_dir = config.log_file_path.clone();
         let logs_dir = base_dir.join("logs");
-        let upload_ready_dir = base_dir.join("upload_ready");
 
         std::fs::create_dir_all(&logs_dir)?;
-        std::fs::create_dir_all(&upload_ready_dir)?;
 
         let uploader = uploader.map(|u| Arc::new(tokio::sync::Mutex::new(u)));
 
@@ -70,7 +72,6 @@ impl LoggerManager {
             loggers: DashMap::new(),
             base_dir,
             logs_dir,
-            upload_ready_dir,
             config,
             uploader,
         })
@@ -112,7 +113,6 @@ impl LoggerManager {
             let logger = Logger::new(
                 &sanitized,
                 &self.logs_dir,
-                &self.upload_ready_dir,
                 self.config.clone(),
             )?;
             Ok(Arc::new(parking_lot::Mutex::new(logger)))

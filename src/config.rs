@@ -12,12 +12,24 @@ pub struct Config {
     pub buffer_size: usize,
     /// Maximum file size before rotation (bytes).
     pub max_file_size: u64,
-    /// Base directory; `logs/` and `upload_ready/` are created inside.
+    /// Base directory; `logs/` is created inside.
     pub log_file_path: PathBuf,
     /// Timer-based flush interval (default: 5 minutes).
     pub flush_interval: Duration,
     /// Optional GCS upload configuration.
     pub gcs_config: Option<GcsUploadConfig>,
+    /// Optional metrics configuration. When `Some`, `init_metrics()` is called
+    /// during `LoggerManager::new()`.
+    pub metrics_config: Option<MetricsConfig>,
+}
+
+/// Metrics configuration for Cadence/StatsD/DogStatsD emission.
+#[derive(Debug, Clone)]
+pub struct MetricsConfig {
+    pub telegraf_host: String,
+    pub telegraf_port: String,
+    pub global_tags: Vec<(String, String)>,
+    pub sampling_rate: f64,
 }
 
 /// GCS upload settings used by the `Uploader`.

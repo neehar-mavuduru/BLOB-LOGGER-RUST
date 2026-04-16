@@ -9,6 +9,14 @@ use crate::unsafe_io;
 
 static FILE_SEQ: AtomicU64 = AtomicU64::new(0);
 
+/// Returns the system hostname. In Kubernetes, this equals the pod name.
+fn get_hostname() -> String {
+    nix::unistd::gethostname()
+        .ok()
+        .and_then(|h| h.into_string().ok())
+        .unwrap_or_default()
+}
+
 /// Abstraction over vectored file writing with rotation support.
 pub trait FileWriter: Send + Sync + std::fmt::Debug {
     /// Writes multiple 4096-aligned buffers at the current file offset.
@@ -33,8 +41,8 @@ struct WriterState {
 /// Implements Bug 1 (alignment), Bug 2 (empty file) fixes from the Go reference.
 pub struct SizeFileWriter {
     base_name: String,
+    hostname: String,
     logs_dir: PathBuf,
-    upload_ready_dir: PathBuf,
     max_file_size: i64,
     state: Mutex<WriterState>,
     last_pwritev_ns: AtomicU64,
@@ -57,10 +65,10 @@ impl SizeFileWriter {
     pub fn new(
         base_name: &str,
         logs_dir: &std::path::Path,
-        upload_ready_dir: &std::path::Path,
         max_file_size: u64,
     ) -> Result<Self, Error> {
-        let tmp_path = Self::make_tmp_path(base_name, logs_dir);
+        let hostname = get_hostname();
+        let tmp_path = Self::generate_tmp_path(base_name, &hostname, logs_dir);
         let fd = unsafe_io::open_direct(&tmp_path)?;
 
         let aligned_max = Self::align_up(max_file_size as i64);
@@ -68,8 +76,8 @@ impl SizeFileWriter {
 
         Ok(Self {
             base_name: base_name.to_string(),
+            hostname,
             logs_dir: logs_dir.to_path_buf(),
-            upload_ready_dir: upload_ready_dir.to_path_buf(),
             max_file_size: max_file_size as i64,
             state: Mutex::new(WriterState {
                 current_fd: Some(fd),
@@ -83,10 +91,18 @@ impl SizeFileWriter {
         })
     }
 
-    fn make_tmp_path(base_name: &str, logs_dir: &std::path::Path) -> PathBuf {
+    /// Generates a timestamped filename.
+    /// With hostname: `{base_name}--{hostname}_{timestamp}_{seq}.log.tmp`
+    /// Without hostname: `{base_name}_{timestamp}_{seq}.log.tmp`
+    fn generate_tmp_path(base_name: &str, hostname: &str, logs_dir: &std::path::Path) -> PathBuf {
         let ts = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S");
         let seq = FILE_SEQ.fetch_add(1, Ordering::Relaxed);
-        logs_dir.join(format!("{base_name}_{ts}_{seq}.log.tmp"))
+        let filename = if hostname.is_empty() {
+            format!("{base_name}_{ts}_{seq}.log.tmp")
+        } else {
+            format!("{base_name}--{hostname}_{ts}_{seq}.log.tmp")
+        };
+        logs_dir.join(filename)
     }
 
     fn align_up(v: i64) -> i64 {
@@ -94,7 +110,7 @@ impl SizeFileWriter {
     }
 
     fn pre_create_next_file(&self) -> Result<(i32, PathBuf), Error> {
-        let path = Self::make_tmp_path(&self.base_name, &self.logs_dir);
+        let path = Self::generate_tmp_path(&self.base_name, &self.hostname, &self.logs_dir);
         let fd = unsafe_io::open_direct(&path)?;
         let aligned_max = Self::align_up(self.max_file_size);
         unsafe_io::fallocate(fd, aligned_max)?;
@@ -110,7 +126,36 @@ impl SizeFileWriter {
         }
     }
 
-    /// Rotates the current file: seal, rename, symlink, and prepare next file.
+    /// Renames a file with retry. On final failure, logs error and returns Ok
+    /// (matching Go behavior: rename failure should not block rotation).
+    fn rename_with_retry(from: &std::path::Path, to: &std::path::Path) {
+        const RETRY_COUNT: usize = 3;
+        const RETRY_DELAY: Duration = Duration::from_millis(10);
+
+        for i in 0..RETRY_COUNT {
+            match std::fs::rename(from, to) {
+                Ok(()) => return,
+                Err(e) => {
+                    if i < RETRY_COUNT - 1 {
+                        tracing::warn!(
+                            "rename {:?} -> {:?} failed (attempt {}/{}): {}",
+                            from, to, i + 1, RETRY_COUNT, e
+                        );
+                        std::thread::sleep(RETRY_DELAY);
+                    } else {
+                        tracing::error!(
+                            "rename {:?} -> {:?} failed after {} retries: {}",
+                            from, to, RETRY_COUNT, e
+                        );
+                        crate::metrics::count("blob_logger.file_rename_failed", 1, &[]);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Rotates the current file: seal, rename .tmp -> .log, and prepare next file.
+    /// The uploader discovers .log files directly in the logs directory.
     /// Must be called with `state` already locked.
     fn rotate_inner(&self, state: &mut WriterState) -> Result<(), Error> {
         let fd = state
@@ -130,18 +175,7 @@ impl SizeFileWriter {
             unsafe_io::close_fd(fd)?;
 
             let final_path = Self::strip_tmp_extension(&state.current_tmp_path);
-            std::fs::rename(&state.current_tmp_path, &final_path)?;
-
-            let symlink_path = self.upload_ready_dir.join(
-                final_path
-                    .file_name()
-                    .ok_or_else(|| Error::Io(std::io::Error::other("no filename")))?,
-            );
-            // Remove stale symlink if it exists, then create a new one
-            let _ = std::fs::remove_file(&symlink_path);
-            if let Err(e) = std::os::unix::fs::symlink(&final_path, &symlink_path) {
-                tracing::error!("failed to create symlink {:?} → {:?}: {}", symlink_path, final_path, e);
-            }
+            Self::rename_with_retry(&state.current_tmp_path, &final_path);
         }
 
         state.file_offset = 0;
@@ -156,6 +190,7 @@ impl SizeFileWriter {
             state.current_tmp_path = path;
         }
 
+        crate::metrics::count("blob_logger.file_writer_rotation_count", 1, &[]);
         tracing::info!(base_name = %self.base_name, "file rotated");
         Ok(())
     }
@@ -187,8 +222,10 @@ impl FileWriter for SizeFileWriter {
 
         let t0 = Instant::now();
         let written = unsafe_io::pwritev(fd, buffers, state.file_offset)?;
+        let write_elapsed = t0.elapsed();
         self.last_pwritev_ns
-            .store(t0.elapsed().as_nanos() as u64, Ordering::Relaxed);
+            .store(write_elapsed.as_nanos() as u64, Ordering::Relaxed);
+        crate::metrics::timing("blob_logger.file_writer_write_duration", write_elapsed, &[]);
 
         // Bug 1 fix: advance by padded total, not by bytes written
         let padded_total: i64 = buffers.iter().map(|b| b.len() as i64).sum();
@@ -243,15 +280,7 @@ impl FileWriter for SizeFileWriter {
                 unsafe_io::close_fd(fd)?;
 
                 let final_path = Self::strip_tmp_extension(&state.current_tmp_path);
-                std::fs::rename(&state.current_tmp_path, &final_path)?;
-
-                let symlink_path = self.upload_ready_dir.join(
-                    final_path.file_name().unwrap_or_default(),
-                );
-                let _ = std::fs::remove_file(&symlink_path);
-                if let Err(e) = std::os::unix::fs::symlink(&final_path, &symlink_path) {
-                    tracing::error!("failed to create symlink on close: {}", e);
-                }
+                Self::rename_with_retry(&state.current_tmp_path, &final_path);
             }
         }
 

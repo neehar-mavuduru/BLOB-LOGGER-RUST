@@ -72,13 +72,17 @@ fn test_adversarial_cas_high_contention() {
         let offset = buf.offset().load(Ordering::Relaxed) as usize;
         let mut pos = HEADER_OFFSET;
         let mut records = std::collections::HashSet::new();
+        const TIMESTAMP_SIZE: usize = 8;
 
         while pos + 4 <= offset {
             let rec_len = u32::from_le_bytes(slice[pos..pos + 4].try_into().unwrap()) as usize;
             if pos + 4 + rec_len > offset {
                 break;
             }
-            let data = String::from_utf8_lossy(&slice[pos + 4..pos + 4 + rec_len]).to_string();
+            // rec_len includes 8-byte timestamp + payload
+            let payload_start = pos + 4 + TIMESTAMP_SIZE;
+            let payload_end = pos + 4 + rec_len;
+            let data = String::from_utf8_lossy(&slice[payload_start..payload_end]).to_string();
             assert!(
                 records.insert(data.clone()),
                 "run {run}: duplicate record: {data}"
@@ -137,11 +141,9 @@ fn test_adversarial_double_swap_one_winner() {
 fn test_adversarial_file_offset_alignment() {
     let tmp = TempDir::new().expect("temp dir");
     let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
     std::fs::create_dir_all(&logs_dir).expect("mkdir");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
 
-    let writer = SizeFileWriter::new("align_test", &logs_dir, &upload_ready, 100 * 1024 * 1024)
+    let writer = SizeFileWriter::new("align_test", &logs_dir, 100 * 1024 * 1024)
         .expect("create writer");
 
     for i in 0..50 {
@@ -238,31 +240,6 @@ async fn test_adversarial_multiple_close_concurrent() {
     }
 }
 
-#[test]
-fn test_adversarial_symlink_already_exists() {
-    let tmp = TempDir::new().expect("temp dir");
-    let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
-    std::fs::create_dir_all(&logs_dir).expect("mkdir");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
-
-    // Pre-create a stale symlink
-    let stale_target = logs_dir.join("stale_target.log");
-    std::fs::write(&stale_target, b"stale").expect("write stale");
-    let stale_symlink = upload_ready.join("stale_target.log");
-    std::os::unix::fs::symlink(&stale_target, &stale_symlink).expect("symlink");
-
-    // The writer should be able to create files without panicking
-    let mut writer = SizeFileWriter::new("symlink_test", &logs_dir, &upload_ready, 8192)
-        .expect("create writer");
-
-    let buf = vec![0xBBu8; 4096];
-    writer.write_vectored(&[&buf]).expect("write");
-
-    // The writer may warn about the stale symlink but should not panic
-    writer.close().expect("close");
-}
-
 #[tokio::test]
 async fn test_adversarial_write_after_swap_before_flush() {
     let (tx, rx) = crossbeam_channel::bounded(32);
@@ -349,17 +326,13 @@ async fn test_adversarial_stalled_disk() {
 }
 
 #[test]
-fn test_adversarial_upload_ready_missing() {
+fn test_adversarial_rotation_with_writes() {
     let tmp = TempDir::new().expect("temp dir");
     let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
     std::fs::create_dir_all(&logs_dir).expect("mkdir");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
 
     let mut writer =
-        SizeFileWriter::new("missing_dir_test", &logs_dir, &upload_ready, 8192).expect("create writer");
-
-    std::fs::remove_dir_all(&upload_ready).expect("remove upload_ready");
+        SizeFileWriter::new("rotation_test", &logs_dir, 8192).expect("create writer");
 
     let buf = vec![0xBBu8; 4096];
     writer.write_vectored(&[&buf]).expect("write");
@@ -367,10 +340,9 @@ fn test_adversarial_upload_ready_missing() {
     // Write enough to trigger rotation (8192 byte max)
     writer.write_vectored(&[&buf]).expect("write again");
 
-    // Rotation tries to create symlink in missing dir - should log error, not panic
     writer.close().expect("close should not panic");
 
-    // Log file should still exist
+    // Log files should exist
     let entries: Vec<_> = std::fs::read_dir(&logs_dir)
         .expect("read logs dir")
         .flatten()
@@ -381,16 +353,12 @@ fn test_adversarial_upload_ready_missing() {
 #[tokio::test]
 async fn test_adversarial_partial_upload_retry() {
     let tmp = TempDir::new().expect("temp dir");
-    let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
-    std::fs::create_dir_all(&logs_dir).expect("mkdir");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
+    let scan_dir = tmp.path().join("logs");
+    std::fs::create_dir_all(&scan_dir).expect("mkdir");
 
     let filename = "fail_event_2026-03-07_14-00-00.log";
-    let file_path = logs_dir.join(filename);
+    let file_path = scan_dir.join(filename);
     std::fs::write(&file_path, b"upload retry data").expect("write");
-    let sym_path = upload_ready.join(filename);
-    std::os::unix::fs::symlink(&file_path, &sym_path).expect("symlink");
 
     let fake_store = Arc::new(common::FakeObjectStore::new());
     let gcs_config = GcsUploadConfig {
@@ -402,7 +370,7 @@ async fn test_adversarial_partial_upload_retry() {
     };
 
     let mut uploader =
-        Uploader::with_store(upload_ready.clone(), gcs_config, fake_store.clone());
+        Uploader::with_store(scan_dir.clone(), gcs_config, fake_store.clone());
     uploader.start();
 
     tokio::time::sleep(Duration::from_secs(2)).await;
@@ -415,17 +383,17 @@ async fn test_adversarial_partial_upload_retry() {
         "file should be uploaded after retries"
     );
 
-    // Symlink and original file should be cleaned up after successful upload
+    // Original file should be cleaned up after successful upload
     assert!(
-        !sym_path.exists(),
-        "symlink should be removed after upload"
+        !file_path.exists(),
+        "file should be removed after upload"
     );
 }
 
 #[tokio::test]
 async fn test_adversarial_poll_during_rotation() {
     let tmp = TempDir::new().expect("temp dir");
-    let upload_ready = tmp.path().join("upload_ready");
+    let logs_dir = tmp.path().join("logs");
 
     let mut config = Config {
         num_shards: 2,
@@ -434,6 +402,7 @@ async fn test_adversarial_poll_during_rotation() {
         log_file_path: tmp.path().to_path_buf(),
         flush_interval: Duration::from_secs(300),
         gcs_config: None,
+        metrics_config: None,
     };
     config.validate().expect("validate");
 
@@ -446,8 +415,9 @@ async fn test_adversarial_poll_during_rotation() {
         poll_interval: Duration::from_millis(10),
     };
 
+    // Uploader now scans the logs dir directly
     let mut uploader =
-        Uploader::with_store(upload_ready.clone(), gcs_config, fake_store.clone());
+        Uploader::with_store(logs_dir.clone(), gcs_config, fake_store.clone());
     uploader.start();
 
     let mgr = LoggerManager::with_uploader(config, None).expect("create manager");
@@ -469,47 +439,4 @@ async fn test_adversarial_poll_during_rotation() {
             ".tmp file should never appear in uploads: {key}"
         );
     }
-}
-
-#[tokio::test]
-async fn test_adversarial_dangling_symlink() {
-    let tmp = TempDir::new().expect("temp dir");
-    let upload_ready = tmp.path().join("upload_ready");
-    let logs_dir = tmp.path().join("logs");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
-    std::fs::create_dir_all(&logs_dir).expect("mkdir");
-
-    // Create a dangling symlink (target doesn't exist)
-    let nonexistent = logs_dir.join("ghost_2026-03-07_14-00-00.log");
-    let symlink = upload_ready.join("ghost_2026-03-07_14-00-00.log");
-    std::os::unix::fs::symlink(&nonexistent, &symlink).expect("symlink");
-
-    // Also create a valid file + symlink
-    let valid_file = logs_dir.join("valid_2026-03-07_14-01-00.log");
-    std::fs::write(&valid_file, b"valid data").expect("write");
-    let valid_sym = upload_ready.join("valid_2026-03-07_14-01-00.log");
-    std::os::unix::fs::symlink(&valid_file, &valid_sym).expect("symlink");
-
-    let fake_store = Arc::new(common::FakeObjectStore::new());
-    let gcs_config = blob_logger_rust::config::GcsUploadConfig {
-        bucket: "test".into(),
-        object_prefix: "p/".into(),
-        chunk_size: 1024 * 1024,
-        max_retries: 1,
-        poll_interval: Duration::from_millis(100),
-    };
-
-    let mut uploader =
-        blob_logger_rust::uploader::Uploader::with_store(upload_ready.clone(), gcs_config, fake_store.clone());
-    uploader.start();
-
-    tokio::time::sleep(Duration::from_secs(2)).await;
-    uploader.stop().await.expect("stop");
-
-    let state = fake_store.state.lock();
-    // The valid file should be uploaded
-    assert!(
-        !state.objects.is_empty(),
-        "at least the valid file should be uploaded"
-    );
 }

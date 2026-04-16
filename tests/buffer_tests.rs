@@ -4,6 +4,8 @@ use std::time::Duration;
 
 use blob_logger_rust::buffer::{Buffer, HEADER_OFFSET};
 
+const TIMESTAMP_SIZE: usize = 8;
+
 #[test]
 fn test_initial_offset() {
     let buf = Buffer::new(4096, 0).expect("create buffer");
@@ -15,12 +17,19 @@ fn test_initial_offset() {
 fn test_write_length_prefix() {
     let buf = Buffer::new(4096, 0).expect("create buffer");
     let (n, _) = buf.write(b"hello").expect("write");
-    assert_eq!(n, 4 + 5); // 4 byte prefix + 5 bytes data
+    assert_eq!(n, 4 + TIMESTAMP_SIZE + 5); // 4 byte prefix + 8 byte timestamp + 5 bytes data
 
     let slice = buf.data_slice();
+    // Length prefix should be timestampSize + len(payload) = 8 + 5 = 13
     let len = u32::from_le_bytes(slice[HEADER_OFFSET..HEADER_OFFSET + 4].try_into().unwrap());
-    assert_eq!(len, 5);
-    assert_eq!(&slice[HEADER_OFFSET + 4..HEADER_OFFSET + 9], b"hello");
+    assert_eq!(len, (TIMESTAMP_SIZE + 5) as u32);
+
+    // Timestamp should be non-zero
+    let ts = u64::from_le_bytes(slice[HEADER_OFFSET + 4..HEADER_OFFSET + 12].try_into().unwrap());
+    assert!(ts > 0, "timestamp should be non-zero");
+
+    // Payload follows the timestamp
+    assert_eq!(&slice[HEADER_OFFSET + 4 + TIMESTAMP_SIZE..HEADER_OFFSET + 4 + TIMESTAMP_SIZE + 5], b"hello");
 
     buf.free().expect("free");
 }
@@ -28,16 +37,17 @@ fn test_write_length_prefix() {
 #[test]
 fn test_write_offset_advances() {
     let buf = Buffer::new(4096, 0).expect("create buffer");
+    let record_size = 4 + TIMESTAMP_SIZE + 5; // prefix + ts + "hello"
 
     let (n1, _) = buf.write(b"hello").expect("write 1");
-    assert_eq!(n1, 9);
+    assert_eq!(n1, record_size);
     let off1 = buf.offset().load(Ordering::Relaxed);
-    assert_eq!(off1, (HEADER_OFFSET + 9) as i32);
+    assert_eq!(off1, (HEADER_OFFSET + record_size) as i32);
 
     let (n2, _) = buf.write(b"world").expect("write 2");
-    assert_eq!(n2, 9);
+    assert_eq!(n2, record_size);
     let off2 = buf.offset().load(Ordering::Relaxed);
-    assert_eq!(off2, (HEADER_OFFSET + 18) as i32);
+    assert_eq!(off2, (HEADER_OFFSET + 2 * record_size) as i32);
 
     buf.free().expect("free");
 }
@@ -46,6 +56,7 @@ fn test_write_offset_advances() {
 fn test_write_full_buffer() {
     let buf = Buffer::new(4096, 0).expect("create buffer");
     let payload = vec![0xABu8; 100];
+    let rec_len_expected = TIMESTAMP_SIZE + 100; // what's stored in the length prefix
     let mut count = 0;
 
     loop {
@@ -68,8 +79,9 @@ fn test_write_full_buffer() {
     let mut decoded = 0;
     while pos + 4 <= offset {
         let rec_len = u32::from_le_bytes(slice[pos..pos + 4].try_into().unwrap()) as usize;
-        assert_eq!(rec_len, 100);
-        assert_eq!(&slice[pos + 4..pos + 4 + rec_len], &payload[..]);
+        assert_eq!(rec_len, rec_len_expected);
+        // Skip 4B prefix + 8B timestamp, verify payload
+        assert_eq!(&slice[pos + 4 + TIMESTAMP_SIZE..pos + 4 + rec_len], &payload[..]);
         pos += 4 + rec_len;
         decoded += 1;
     }
@@ -130,7 +142,8 @@ fn test_write_cas_retry_correctness() {
         if pos + 4 + rec_len > offset {
             break;
         }
-        let data = String::from_utf8_lossy(&slice[pos + 4..pos + 4 + rec_len]).to_string();
+        // Skip timestamp, extract payload
+        let data = String::from_utf8_lossy(&slice[pos + 4 + TIMESTAMP_SIZE..pos + 4 + rec_len]).to_string();
         assert!(records.insert(data.clone()), "duplicate record: {}", data);
         pos += 4 + rec_len;
     }

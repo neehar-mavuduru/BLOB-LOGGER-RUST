@@ -17,7 +17,6 @@ async fn test_creates_directories() {
     let _mgr = LoggerManager::new(config).await.expect("create manager");
 
     assert!(tmp.path().join("logs").exists());
-    assert!(tmp.path().join("upload_ready").exists());
 }
 
 #[tokio::test]
@@ -84,7 +83,4 @@ async fn test_close_flushes_all_events() {
 
     let log_files = common::find_log_files(&tmp.path().join("logs"));
     assert_eq!(log_files.len(), 5, "should have 5 log files");
-
-    let symlinks = common::find_symlinks(&tmp.path().join("upload_ready"));
-    assert_eq!(symlinks.len(), 5, "should have 5 symlinks");
 }

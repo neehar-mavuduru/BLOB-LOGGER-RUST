@@ -48,19 +48,17 @@ fn test_gcs_object_path_event_with_underscores() {
 #[tokio::test]
 async fn test_empty_file_skipped() {
     let tmp = TempDir::new().expect("temp dir");
-    let upload_ready = tmp.path().join("upload_ready");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
+    let scan_dir = tmp.path().join("logs");
+    std::fs::create_dir_all(&scan_dir).expect("mkdir");
 
-    // Create an empty .log file and symlink
-    let log_file = tmp.path().join("empty_2026-03-07_14-30-00.log");
+    // Create an empty .log file directly in the scan dir
+    let log_file = scan_dir.join("empty_2026-03-07_14-30-00.log");
     std::fs::write(&log_file, b"").expect("write empty");
-    let symlink = upload_ready.join("empty_2026-03-07_14-30-00.log");
-    std::os::unix::fs::symlink(&log_file, &symlink).expect("symlink");
 
     let fake_store = Arc::new(common::FakeObjectStore::new());
     let config = make_gcs_config();
 
-    let mut uploader = Uploader::with_store(upload_ready.clone(), config, fake_store.clone());
+    let mut uploader = Uploader::with_store(scan_dir.clone(), config, fake_store.clone());
     uploader.start();
 
     tokio::time::sleep(Duration::from_millis(500)).await;
@@ -71,26 +69,22 @@ async fn test_empty_file_skipped() {
 }
 
 #[tokio::test]
-async fn test_crash_recovery_picks_up_leftover_symlinks() {
+async fn test_crash_recovery_picks_up_leftover_files() {
     let tmp = TempDir::new().expect("temp dir");
-    let upload_ready = tmp.path().join("upload_ready");
-    let logs_dir = tmp.path().join("logs");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
-    std::fs::create_dir_all(&logs_dir).expect("mkdir");
+    let scan_dir = tmp.path().join("logs");
+    std::fs::create_dir_all(&scan_dir).expect("mkdir");
 
-    // Pre-populate with 3 symlinks
+    // Pre-populate with 3 .log files (simulating leftover from previous shutdown)
     for i in 0..3 {
         let filename = format!("event_{i}_2026-03-07_14-{i:02}-00.log");
-        let log_path = logs_dir.join(&filename);
+        let log_path = scan_dir.join(&filename);
         std::fs::write(&log_path, format!("data for event {i}")).expect("write");
-        let sym_path = upload_ready.join(&filename);
-        std::os::unix::fs::symlink(&log_path, &sym_path).expect("symlink");
     }
 
     let fake_store = Arc::new(common::FakeObjectStore::new());
     let config = make_gcs_config();
 
-    let mut uploader = Uploader::with_store(upload_ready.clone(), config, fake_store.clone());
+    let mut uploader = Uploader::with_store(scan_dir.clone(), config, fake_store.clone());
     uploader.start();
 
     // Wait for uploads to complete
@@ -104,17 +98,17 @@ async fn test_crash_recovery_picks_up_leftover_symlinks() {
 #[tokio::test]
 async fn test_ignores_tmp_files() {
     let tmp = TempDir::new().expect("temp dir");
-    let upload_ready = tmp.path().join("upload_ready");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
+    let scan_dir = tmp.path().join("logs");
+    std::fs::create_dir_all(&scan_dir).expect("mkdir");
 
-    // Place a .tmp file directly in upload_ready
-    let tmp_file = upload_ready.join("test.log.tmp");
+    // Place a .tmp file in the scan dir (still being written)
+    let tmp_file = scan_dir.join("test.log.tmp");
     std::fs::write(&tmp_file, b"not ready").expect("write");
 
     let fake_store = Arc::new(common::FakeObjectStore::new());
     let config = make_gcs_config();
 
-    let mut uploader = Uploader::with_store(upload_ready.clone(), config, fake_store.clone());
+    let mut uploader = Uploader::with_store(scan_dir.clone(), config, fake_store.clone());
     uploader.start();
 
     tokio::time::sleep(Duration::from_millis(500)).await;
@@ -127,13 +121,13 @@ async fn test_ignores_tmp_files() {
 #[tokio::test]
 async fn test_stop_idempotent() {
     let tmp = TempDir::new().expect("temp dir");
-    let upload_ready = tmp.path().join("upload_ready");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
+    let scan_dir = tmp.path().join("logs");
+    std::fs::create_dir_all(&scan_dir).expect("mkdir");
 
     let fake_store = Arc::new(common::FakeObjectStore::new());
     let config = make_gcs_config();
 
-    let mut uploader = Uploader::with_store(upload_ready, config, fake_store);
+    let mut uploader = Uploader::with_store(scan_dir, config, fake_store);
     uploader.start();
 
     uploader.stop().await.expect("stop 1");

@@ -16,6 +16,7 @@ fn make_integration_config(base_dir: &std::path::Path) -> Config {
         log_file_path: base_dir.to_path_buf(),
         flush_interval: Duration::from_secs(300),
         gcs_config: None,
+        metrics_config: None,
     };
     config.validate().expect("validate");
     config
@@ -29,6 +30,7 @@ fn make_small_file_config(base_dir: &std::path::Path) -> Config {
         log_file_path: base_dir.to_path_buf(),
         flush_interval: Duration::from_secs(300),
         gcs_config: None,
+        metrics_config: None,
     };
     config.validate().expect("validate");
     config
@@ -51,20 +53,12 @@ async fn test_write_and_close_produces_log_files() {
     mgr.close().await.expect("close");
 
     let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
 
     // Should have sealed log files
     let log_files = common::find_log_files(&logs_dir);
     assert!(
         !log_files.is_empty(),
         "should have at least one .log file"
-    );
-
-    // Should have symlinks
-    let symlinks = common::find_symlinks(&upload_ready);
-    assert!(
-        !symlinks.is_empty(),
-        "should have at least one symlink"
     );
 
     // No .tmp files should remain
@@ -86,17 +80,13 @@ async fn test_write_and_close_produces_log_files() {
 #[tokio::test]
 async fn test_upload_picks_up_sealed_files() {
     let tmp = TempDir::new().expect("temp dir");
-    let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
-    std::fs::create_dir_all(&logs_dir).expect("mkdir");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
+    let scan_dir = tmp.path().join("logs");
+    std::fs::create_dir_all(&scan_dir).expect("mkdir");
 
-    // Pre-populate with a file and symlink
+    // Pre-populate with a .log file directly in the scan dir
     let filename = "test_event_2026-03-07_14-00-00.log";
-    let file_path = logs_dir.join(filename);
+    let file_path = scan_dir.join(filename);
     std::fs::write(&file_path, b"some test data content here").expect("write");
-    let sym_path = upload_ready.join(filename);
-    std::os::unix::fs::symlink(&file_path, &sym_path).expect("symlink");
 
     let fake_store = Arc::new(common::FakeObjectStore::new());
     let gcs_config = GcsUploadConfig {
@@ -107,7 +97,7 @@ async fn test_upload_picks_up_sealed_files() {
         poll_interval: Duration::from_millis(100),
     };
 
-    let mut uploader = Uploader::with_store(upload_ready.clone(), gcs_config, fake_store.clone());
+    let mut uploader = Uploader::with_store(scan_dir.clone(), gcs_config, fake_store.clone());
     uploader.start();
 
     tokio::time::sleep(Duration::from_secs(3)).await;
@@ -165,7 +155,6 @@ async fn test_multi_event_isolation() {
 #[tokio::test]
 async fn test_write_rotate_upload() {
     let tmp = TempDir::new().expect("temp dir");
-    let upload_ready = tmp.path().join("upload_ready");
     let logs_dir = tmp.path().join("logs");
     let config = make_small_file_config(tmp.path());
 
@@ -201,7 +190,8 @@ async fn test_write_rotate_upload() {
         poll_interval: Duration::from_millis(100),
     };
 
-    let mut uploader = Uploader::with_store(upload_ready.clone(), gcs_config, fake_store.clone());
+    // Uploader scans the logs dir directly
+    let mut uploader = Uploader::with_store(logs_dir.clone(), gcs_config, fake_store.clone());
     uploader.start();
     tokio::time::sleep(Duration::from_secs(3)).await;
     uploader.stop().await.expect("stop");
@@ -217,10 +207,11 @@ async fn test_write_rotate_upload() {
     }
     drop(state);
 
-    let remaining = common::find_symlinks(&upload_ready);
+    // All .log files should be cleaned up after upload
+    let remaining = common::find_log_files(&logs_dir);
     assert!(
         remaining.is_empty(),
-        "upload_ready should be empty after upload, found: {:?}",
+        "logs dir should have no .log files after upload, found: {:?}",
         remaining
     );
 
@@ -245,6 +236,7 @@ async fn test_no_data_loss_under_max_concurrency() {
         log_file_path: tmp.path().to_path_buf(),
         flush_interval: Duration::from_secs(300),
         gcs_config: None,
+        metrics_config: None,
     };
     config.validate().expect("validate");
 
@@ -292,18 +284,14 @@ async fn test_no_data_loss_under_max_concurrency() {
 #[tokio::test]
 async fn test_crash_recovery() {
     let tmp = TempDir::new().expect("temp dir");
-    let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
-    std::fs::create_dir_all(&logs_dir).expect("mkdir");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
+    let scan_dir = tmp.path().join("logs");
+    std::fs::create_dir_all(&scan_dir).expect("mkdir");
 
-    // Pre-populate with leftover symlinks (simulating crash)
+    // Pre-populate with leftover .log files (simulating crash)
     for i in 0..3 {
         let filename = format!("crash_event_{i}_2026-03-07_14-{i:02}-00.log");
-        let file_path = logs_dir.join(&filename);
+        let file_path = scan_dir.join(&filename);
         std::fs::write(&file_path, format!("crash recovery data {i}")).expect("write");
-        let sym_path = upload_ready.join(&filename);
-        std::os::unix::fs::symlink(&file_path, &sym_path).expect("symlink");
     }
 
     let fake_store = Arc::new(common::FakeObjectStore::new());
@@ -315,7 +303,7 @@ async fn test_crash_recovery() {
         poll_interval: Duration::from_millis(100),
     };
 
-    let mut uploader = Uploader::with_store(upload_ready.clone(), gcs_config, fake_store.clone());
+    let mut uploader = Uploader::with_store(scan_dir.clone(), gcs_config, fake_store.clone());
     uploader.start();
 
     tokio::time::sleep(Duration::from_secs(3)).await;

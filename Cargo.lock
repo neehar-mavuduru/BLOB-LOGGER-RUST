@@ -79,10 +79,12 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
+ "cadence",
  "chrono",
  "criterion",
  "crossbeam-channel",
  "dashmap",
+ "fastrand",
  "futures",
  "nix",
  "object_store",
@@ -108,6 +110,15 @@ name = "bytes"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
+
+[[package]]
+name = "cadence"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ca08f6db9f0c963249cf23a27820f9d973d2acaad4d6bfaeb858b58ebd58a6a"
+dependencies = [
+ "crossbeam-channel",
+]
 
 [[package]]
 name = "cast"

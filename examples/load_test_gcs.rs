@@ -90,6 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             max_retries: 0, // use default
             poll_interval: Duration::from_secs(3),
         }),
+        metrics_config: None,
     };
     config.validate()?;
 

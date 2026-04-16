@@ -5,13 +5,11 @@ use tempfile::TempDir;
 
 mod common;
 
-fn setup() -> (TempDir, PathBuf, PathBuf) {
+fn setup() -> (TempDir, PathBuf) {
     let tmp = TempDir::new().expect("create temp dir");
     let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
     std::fs::create_dir_all(&logs_dir).expect("mkdir logs");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir upload_ready");
-    (tmp, logs_dir, upload_ready)
+    (tmp, logs_dir)
 }
 
 fn make_4096_buffer(fill: u8) -> Vec<u8> {
@@ -20,8 +18,8 @@ fn make_4096_buffer(fill: u8) -> Vec<u8> {
 
 #[test]
 fn test_tmp_suffix_on_create() {
-    let (_tmp, logs_dir, upload_ready) = setup();
-    let _writer = SizeFileWriter::new("test_event", &logs_dir, &upload_ready, 1024 * 1024)
+    let (_tmp, logs_dir) = setup();
+    let _writer = SizeFileWriter::new("test_event", &logs_dir, 1024 * 1024)
         .expect("create writer");
 
     let entries: Vec<_> = std::fs::read_dir(&logs_dir)
@@ -47,8 +45,8 @@ fn test_tmp_suffix_on_create() {
 
 #[test]
 fn test_write_vectored_multiple_buffers() {
-    let (_tmp, logs_dir, upload_ready) = setup();
-    let mut writer = SizeFileWriter::new("test_event", &logs_dir, &upload_ready, 1024 * 1024)
+    let (_tmp, logs_dir) = setup();
+    let mut writer = SizeFileWriter::new("test_event", &logs_dir, 1024 * 1024)
         .expect("create writer");
 
     let buf1 = make_4096_buffer(0x01);
@@ -65,8 +63,8 @@ fn test_write_vectored_multiple_buffers() {
 
 #[test]
 fn test_file_offset_stays_aligned() {
-    let (_tmp, logs_dir, upload_ready) = setup();
-    let writer = SizeFileWriter::new("test_event", &logs_dir, &upload_ready, 10 * 1024 * 1024)
+    let (_tmp, logs_dir) = setup();
+    let writer = SizeFileWriter::new("test_event", &logs_dir, 10 * 1024 * 1024)
         .expect("create writer");
 
     let buf = make_4096_buffer(0xAA);
@@ -79,8 +77,8 @@ fn test_file_offset_stays_aligned() {
 
 #[test]
 fn test_close_no_tmp_remains() {
-    let (_tmp, logs_dir, upload_ready) = setup();
-    let mut writer = SizeFileWriter::new("test_event", &logs_dir, &upload_ready, 1024 * 1024)
+    let (_tmp, logs_dir) = setup();
+    let mut writer = SizeFileWriter::new("test_event", &logs_dir, 1024 * 1024)
         .expect("create writer");
 
     let buf = make_4096_buffer(0xBB);
@@ -91,15 +89,12 @@ fn test_close_no_tmp_remains() {
 
     let log_files = common::find_log_files(&logs_dir);
     assert!(!log_files.is_empty(), "should have at least one .log file");
-
-    let symlinks = common::find_symlinks(&upload_ready);
-    assert!(!symlinks.is_empty(), "should have at least one symlink");
 }
 
 #[test]
 fn test_empty_file_not_sealed() {
-    let (_tmp, logs_dir, upload_ready) = setup();
-    let mut writer = SizeFileWriter::new("test_event", &logs_dir, &upload_ready, 1024 * 1024)
+    let (_tmp, logs_dir) = setup();
+    let mut writer = SizeFileWriter::new("test_event", &logs_dir, 1024 * 1024)
         .expect("create writer");
 
     // Close without writing anything
@@ -108,7 +103,4 @@ fn test_empty_file_not_sealed() {
     // Bug 2 fix: no 0-byte .log files should exist
     let log_files = common::find_log_files(&logs_dir);
     assert!(log_files.is_empty(), "no .log files should exist for empty file");
-
-    let symlinks = common::find_symlinks(&upload_ready);
-    assert!(symlinks.is_empty(), "no symlinks should exist for empty file");
 }

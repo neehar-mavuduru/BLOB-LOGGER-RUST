@@ -8,22 +8,20 @@ use tempfile::TempDir;
 
 mod common;
 
-fn setup() -> (TempDir, PathBuf, PathBuf, Config) {
+fn setup() -> (TempDir, PathBuf, Config) {
     let tmp = TempDir::new().expect("create temp dir");
     let logs_dir = tmp.path().join("logs");
-    let upload_ready = tmp.path().join("upload_ready");
     std::fs::create_dir_all(&logs_dir).expect("mkdir");
-    std::fs::create_dir_all(&upload_ready).expect("mkdir");
 
     let mut config = common::make_config(tmp.path());
     config.validate().expect("validate");
-    (tmp, logs_dir, upload_ready, config)
+    (tmp, logs_dir, config)
 }
 
 #[test]
 fn test_log_bytes_basic() {
-    let (_tmp, logs_dir, upload_ready, config) = setup();
-    let mut logger = Logger::new("basic_test", &logs_dir, &upload_ready, config).expect("create logger");
+    let (_tmp, logs_dir, config) = setup();
+    let mut logger = Logger::new("basic_test", &logs_dir, config).expect("create logger");
 
     logger.log_bytes(b"hello world").expect("log");
     logger.close().expect("close");
@@ -37,8 +35,8 @@ fn test_log_bytes_basic() {
 
 #[test]
 fn test_stats_tracking() {
-    let (_tmp, logs_dir, upload_ready, config) = setup();
-    let mut logger = Logger::new("stats_test", &logs_dir, &upload_ready, config).expect("create logger");
+    let (_tmp, logs_dir, config) = setup();
+    let mut logger = Logger::new("stats_test", &logs_dir, config).expect("create logger");
 
     for _ in 0..1000 {
         logger.log_bytes(b"stats payload").expect("log");
@@ -54,8 +52,8 @@ fn test_stats_tracking() {
 
 #[test]
 fn test_log_after_close_returns_error() {
-    let (_tmp, logs_dir, upload_ready, config) = setup();
-    let mut logger = Logger::new("close_test", &logs_dir, &upload_ready, config).expect("create logger");
+    let (_tmp, logs_dir, config) = setup();
+    let mut logger = Logger::new("close_test", &logs_dir, config).expect("create logger");
 
     logger.close().expect("close");
     let result = logger.log_bytes(b"after close");
@@ -66,8 +64,8 @@ fn test_log_after_close_returns_error() {
 
 #[test]
 fn test_shutdown_no_data_loss() {
-    let (_tmp, logs_dir, upload_ready, config) = setup();
-    let mut logger = Logger::new("shutdown_test", &logs_dir, &upload_ready, config).expect("create logger");
+    let (_tmp, logs_dir, config) = setup();
+    let mut logger = Logger::new("shutdown_test", &logs_dir, config).expect("create logger");
 
     for i in 0..500 {
         logger.log_bytes(format!("msg_{i:04}").as_bytes()).expect("log");
@@ -86,8 +84,8 @@ fn test_shutdown_no_data_loss() {
 
 #[test]
 fn test_close_idempotent() {
-    let (_tmp, logs_dir, upload_ready, config) = setup();
-    let mut logger = Logger::new("idempotent_test", &logs_dir, &upload_ready, config).expect("create logger");
+    let (_tmp, logs_dir, config) = setup();
+    let mut logger = Logger::new("idempotent_test", &logs_dir, config).expect("create logger");
 
     logger.close().expect("close 1");
     logger.close().expect("close 2");

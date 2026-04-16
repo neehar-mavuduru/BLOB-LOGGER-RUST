@@ -17,6 +17,7 @@ async fn main() {
         log_file_path: tmp.path().to_path_buf(),
         flush_interval: Duration::from_secs(5),
         gcs_config: None,
+        metrics_config: None,
     };
     config.validate().unwrap();
 
@@ -57,17 +58,6 @@ async fn main() {
         let entry = entry.unwrap();
         let meta = std::fs::metadata(entry.path()).unwrap();
         println!("  {:?} ({} bytes)", entry.file_name(), meta.len());
-    }
-
-    let upload_dir = tmp.path().join("upload_ready");
-    println!("\nSymlinks in upload_ready/:");
-    for entry in std::fs::read_dir(&upload_dir).unwrap() {
-        let entry = entry.unwrap();
-        let meta = std::fs::symlink_metadata(entry.path()).unwrap();
-        if meta.file_type().is_symlink() {
-            let target = std::fs::read_link(entry.path()).unwrap();
-            println!("  {:?} → {:?}", entry.file_name(), target);
-        }
     }
 
     println!("\nSmoke test passed!");

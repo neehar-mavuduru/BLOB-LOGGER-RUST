@@ -33,7 +33,6 @@ impl Logger {
     pub fn new(
         base_name: &str,
         logs_dir: &std::path::Path,
-        upload_ready_dir: &std::path::Path,
         config: Config,
     ) -> Result<Self, Error> {
         let num_shards = config.num_shards;
@@ -50,7 +49,6 @@ impl Logger {
         let file_writer: Box<dyn FileWriter> = Box::new(SizeFileWriter::new(
             base_name,
             logs_dir,
-            upload_ready_dir,
             config.max_file_size,
         )?);
         let file_writer = Arc::new(parking_lot::Mutex::new(file_writer));
@@ -148,8 +146,11 @@ impl Logger {
 
                         let slices: Vec<&[u8]> = buffers.iter().map(|b| b.data_slice()).collect();
 
+                        let flush_start = std::time::Instant::now();
                         match file_writer.lock().write_vectored(&slices) {
-                            Ok(_) => {}
+                            Ok(_) => {
+                                crate::metrics::timing("blob_logger.flush_duration", flush_start.elapsed(), &[]);
+                            }
                             Err(e) => {
                                 tracing::error!("write_vectored failed: {}", e);
                                 stats.write_errors.fetch_add(1, Ordering::Relaxed);
@@ -192,9 +193,11 @@ impl Logger {
     #[inline]
     pub fn log_bytes(&self, data: &[u8]) -> Result<(), Error> {
         self.stats.total_logs.fetch_add(1, Ordering::Relaxed);
+        crate::metrics::count("blob_logger.log_bytes", 1, &[]);
 
         if self.closed.load(Ordering::Acquire) {
             self.stats.dropped_logs.fetch_add(1, Ordering::Relaxed);
+            crate::metrics::count("blob_logger.log_bytes_dropped", 1, &[]);
             return Err(Error::LoggerClosed);
         }
 
@@ -203,6 +206,8 @@ impl Logger {
                 self.stats
                     .bytes_written
                     .fetch_add(n as u64, Ordering::Relaxed);
+                crate::metrics::count("blob_logger.log_bytes_success", 1, &[]);
+                crate::metrics::count("blob_logger.log_bytes_written", n as i64, &[]);
                 Ok(())
             }
             (0, _) => {
@@ -214,6 +219,8 @@ impl Logger {
                         self.stats
                             .bytes_written
                             .fetch_add(n as u64, Ordering::Relaxed);
+                        crate::metrics::count("blob_logger.log_bytes_success", 1, &[]);
+                        crate::metrics::count("blob_logger.log_bytes_written", n as i64, &[]);
                         Ok(())
                     }
                     _ => {
@@ -223,10 +230,13 @@ impl Logger {
                                 self.stats
                                     .bytes_written
                                     .fetch_add(n as u64, Ordering::Relaxed);
+                                crate::metrics::count("blob_logger.log_bytes_success", 1, &[]);
+                                crate::metrics::count("blob_logger.log_bytes_written", n as i64, &[]);
                                 Ok(())
                             }
                             _ => {
                                 self.stats.dropped_logs.fetch_add(1, Ordering::Relaxed);
+                                crate::metrics::count("blob_logger.log_bytes_dropped", 1, &[]);
                                 Err(Error::BufferFull)
                             }
                         }
