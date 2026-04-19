@@ -3,9 +3,8 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use object_store::{MultipartUpload, ObjectStore, PutMultipartOpts};
+use object_store::ObjectStore;
 use regex::Regex;
-use tokio::io::AsyncReadExt;
 use tokio::sync::watch;
 
 use crate::config::GcsUploadConfig;
@@ -216,44 +215,22 @@ impl Uploader {
         Ok(())
     }
 
-    /// Uploads a file using streaming multipart upload.
-    /// Reads the file in `chunk_size` chunks to avoid loading it entirely into memory.
+    /// Uploads a file to GCS using single-shot `put()`.
+    /// Reads the entire file into memory and uploads in one request.
+    /// For typical log files (128 MiB), this avoids GCS multipart compose issues
+    /// while keeping memory usage bounded by `max_file_size`.
     async fn do_upload(
         file_path: &PathBuf,
         object_name: &str,
         store: &Arc<dyn ObjectStore>,
-        config: &GcsUploadConfig,
+        _config: &GcsUploadConfig,
     ) -> Result<(), Error> {
         let object_path = object_store::path::Path::from(object_name);
-
-        let mut file = tokio::fs::File::open(file_path)
+        let data = tokio::fs::read(file_path).await.map_err(Error::Io)?;
+        store
+            .put(&object_path, bytes::Bytes::from(data).into())
             .await
-            .map_err(Error::Io)?;
-
-        let mut upload = store
-            .put_multipart_opts(&object_path, PutMultipartOpts::default())
-            .await
-            .map_err(|e| Error::Gcs(format!("put_multipart failed: {e}")))?;
-
-        let mut buf = vec![0u8; config.chunk_size];
-        loop {
-            let n = file.read(&mut buf).await.map_err(Error::Io)?;
-            if n == 0 {
-                break;
-            }
-            upload
-                .put_part(bytes::Bytes::copy_from_slice(&buf[..n]).into())
-                .await
-                .map_err(|e| {
-                    Error::Gcs(format!("put_part failed: {e}"))
-                })?;
-        }
-
-        upload
-            .complete()
-            .await
-            .map_err(|e| Error::Gcs(format!("complete failed: {e}")))?;
-
+            .map_err(|e| Error::Gcs(format!("put failed: {e}")))?;
         Ok(())
     }
 
