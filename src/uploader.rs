@@ -3,9 +3,14 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use object_store::ObjectStore;
+use object_store::{ObjectStore, PutMultipartOpts};
 use regex::Regex;
+use tokio::io::AsyncReadExt;
 use tokio::sync::watch;
+
+/// Files at or below this size are uploaded in a single `put()` call.
+/// Larger files use streaming multipart to avoid loading the full file into memory.
+const SINGLE_SHOT_THRESHOLD: u64 = 128 * 1024 * 1024; // 128 MiB
 
 use crate::config::GcsUploadConfig;
 use crate::error::Error;
@@ -215,22 +220,55 @@ impl Uploader {
         Ok(())
     }
 
-    /// Uploads a file to GCS using single-shot `put()`.
-    /// Reads the entire file into memory and uploads in one request.
-    /// For typical log files (128 MiB), this avoids GCS multipart compose issues
-    /// while keeping memory usage bounded by `max_file_size`.
+    /// Uploads a file to GCS.
+    ///
+    /// - Files <= 128 MiB: single-shot `put()` (reads into memory, one request).
+    /// - Files > 128 MiB: streaming multipart upload, reading `chunk_size` at a time
+    ///   to keep memory usage bounded regardless of file size.
     async fn do_upload(
         file_path: &PathBuf,
         object_name: &str,
         store: &Arc<dyn ObjectStore>,
-        _config: &GcsUploadConfig,
+        config: &GcsUploadConfig,
     ) -> Result<(), Error> {
         let object_path = object_store::path::Path::from(object_name);
-        let data = tokio::fs::read(file_path).await.map_err(Error::Io)?;
-        store
-            .put(&object_path, bytes::Bytes::from(data).into())
+        let file_size = tokio::fs::metadata(file_path)
             .await
-            .map_err(|e| Error::Gcs(format!("put failed: {e}")))?;
+            .map_err(Error::Io)?
+            .len();
+
+        if file_size <= SINGLE_SHOT_THRESHOLD {
+            // Single-shot: read entire file, upload in one request
+            let data = tokio::fs::read(file_path).await.map_err(Error::Io)?;
+            store
+                .put(&object_path, bytes::Bytes::from(data).into())
+                .await
+                .map_err(|e| Error::Gcs(format!("put failed: {e}")))?;
+        } else {
+            // Streaming multipart: read chunk_size at a time
+            let mut file = tokio::fs::File::open(file_path).await.map_err(Error::Io)?;
+            let mut upload = store
+                .put_multipart_opts(&object_path, PutMultipartOpts::default())
+                .await
+                .map_err(|e| Error::Gcs(format!("put_multipart failed: {e}")))?;
+
+            let mut buf = vec![0u8; config.chunk_size];
+            loop {
+                let n = file.read(&mut buf).await.map_err(Error::Io)?;
+                if n == 0 {
+                    break;
+                }
+                upload
+                    .put_part(bytes::Bytes::copy_from_slice(&buf[..n]).into())
+                    .await
+                    .map_err(|e| Error::Gcs(format!("put_part failed: {e}")))?;
+            }
+            upload
+                .complete()
+                .await
+                .map_err(|e| Error::Gcs(format!("complete failed: {e}")))?;
+        }
+
         Ok(())
     }
 
