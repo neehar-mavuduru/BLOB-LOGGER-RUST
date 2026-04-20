@@ -110,6 +110,10 @@ impl Buffer {
     }
 
     /// Writes the 8-byte block header: `[block_size: u32 LE, valid_offset: u32 LE]`.
+    ///
+    /// `block_size` is always set to `capacity` so every block on disk is a fixed,
+    /// predictable size. This simplifies parsing and inherently satisfies 4096 alignment.
+    /// `valid_offset` records how many bytes of actual record data the block contains.
     /// Must be called immediately before flushing via `pwritev`.
     pub fn write_header(&self) {
         let valid = (self.offset.load(Ordering::Acquire) - HEADER_OFFSET as i32) as u32;
@@ -120,6 +124,11 @@ impl Buffer {
     /// Returns the full buffer content as a byte slice (capacity bytes).
     pub fn data_slice(&self) -> &[u8] {
         unsafe_io::as_slice(self.data_ptr as *const u8, self.capacity)
+    }
+
+    /// Returns true if the buffer has no record data (only the header region).
+    pub fn is_empty(&self) -> bool {
+        self.offset.load(Ordering::Acquire) as usize <= HEADER_OFFSET
     }
 
     /// Zeros the buffer and resets offset to `HEADER_OFFSET`.

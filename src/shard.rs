@@ -126,6 +126,7 @@ impl Shard {
 
     /// Atomically swaps active/inactive buffers and sends the old active buffer
     /// (containing data) to the flush channel. Only one thread wins the CAS.
+    /// Skips the swap entirely if the active buffer has no data.
     pub fn try_swap(&self) {
         if self
             .swapping
@@ -136,12 +137,19 @@ impl Shard {
         }
 
         let active_idx = self.active.load(Ordering::Acquire);
-        let new_idx = 1 - active_idx;
         let to_flush = if active_idx == 0 {
             &self.buffer_a
         } else {
             &self.buffer_b
         };
+
+        // Skip if the buffer has no data — avoids writing empty blocks to disk
+        if to_flush.is_empty() {
+            self.swapping.store(false, Ordering::Release);
+            return;
+        }
+
+        let new_idx = 1 - active_idx;
         let next_active = if active_idx == 0 {
             &self.buffer_b
         } else {
